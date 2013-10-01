@@ -63,7 +63,8 @@ define({
 		"tab.col.label": "Table Column",
 		"tab.row.label": "Table Row",
 		"tab.cell.label": "Table Cell",
-		"tab.wai-lang.label": "Language annotation"
+		"tab.wai-lang.label": "Language annotation",
+		"tab.upnxt-field.label": "Template field"
 	},
 		"ca": true,
 		"de": true,

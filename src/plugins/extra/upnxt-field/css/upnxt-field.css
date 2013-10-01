@@ -1,0 +1,20 @@
+.aloha .aloha-upnxt-field-img-item {
+	height: 18px;
+}
+.aloha .aloha-upnxt-field-img {
+	/* 16x11 */
+	margin: 3px 5px 0px 2px;
+}
+
+.aloha .aloha-upnxt-field-label-item {
+	display: inline;
+	font-weight: bold;
+}
+
+span.upnxt-field {
+	border-bottom: 1px dashed #000;
+}
+
+span.upnxt-field:hover {
+	color:#ff0000;
+}

@@ -11,7 +11,7 @@ define(['jquery', 'util/arrays', 'util/maps', 'util/trees'], function($, Arrays,
 						'subscript', 'superscript', 'strikethrough', 'quote'
 					], [
 						'formatLink', 'formatAbbr', 'formatNumeratedHeaders', 'toggleDragDrop', '\n',
-						'toggleMetaView', 'wailang', 'toggleFormatlessPaste'
+						'toggleMetaView', 'wailang', 'upnxtField', 'toggleFormatlessPaste'
 					], [
 						'alignLeft', 'alignCenter', 'alignRight', 'alignJustify', '\n',
 						'orderedList', 'unorderedList', 'indentList', 'outdentList', 'colorPicker'
@@ -61,6 +61,11 @@ define(['jquery', 'util/arrays', 'util/maps', 'util/trees'], function($, Arrays,
             {   label: "tab.wai-lang.label",
 				showOn: { scope: 'wai-lang' },
                 components: [ [ "wailangfield", "removewailang" ] ]
+            },
+            // UP-Nxt field
+            {   label: "tab.upnxt-field.label",
+				showOn: { scope: 'upnxt-field' },
+                components: [ [ "upnxtFieldField", "removeUpnxtField" ] ]
             },
 			// Table Tabs
 			{
