@@ -11,7 +11,7 @@ define(['jquery', 'util/arrays', 'util/maps', 'util/trees'], function($, Arrays,
 						'subscript', 'superscript', 'strikethrough', 'quote'
 					], [
 						'formatLink', 'formatAbbr', 'formatNumeratedHeaders', 'toggleDragDrop', '\n',
-						'toggleMetaView', 'wailang', 'upnxtField', 'toggleFormatlessPaste'
+						'toggleMetaView', 'wailang', 'toggleFormatlessPaste'
 					], [
 						'alignLeft', 'alignCenter', 'alignRight', 'alignJustify', '\n',
 						'orderedList', 'unorderedList', 'indentList', 'outdentList', 'colorPicker'
@@ -28,6 +28,13 @@ define(['jquery', 'util/arrays', 'util/maps', 'util/trees'], function($, Arrays,
 					[ "createTable", "characterPicker", "insertLink",
 					  "insertImage", "insertAbbr", "insertToc",
 					  "insertHorizontalRule", "insertTag"]
+				]
+			},
+			{
+				label: "tab.upnxt-field.label",
+				showOn: { scope: 'Aloha.continuoustext' },
+				components: [
+					[ 'upnxtField', 'upnxtHighlightFields' ]
 				]
 			},
 			// Link Tab
@@ -61,11 +68,6 @@ define(['jquery', 'util/arrays', 'util/maps', 'util/trees'], function($, Arrays,
             {   label: "tab.wai-lang.label",
 				showOn: { scope: 'wai-lang' },
                 components: [ [ "wailangfield", "removewailang" ] ]
-            },
-            // UP-Nxt field
-            {   label: "tab.upnxt-field.label",
-				showOn: { scope: 'upnxt-field' },
-                components: [ [ "upnxtFieldField", "removeUpnxtField" ] ]
             },
 			// Table Tabs
 			{

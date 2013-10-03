@@ -3,7 +3,17 @@
 }
 .aloha .aloha-upnxt-field-img {
 	/* 16x11 */
+	background: url(../img/edit-icon.png) no-repeat 0px 0px !important;
 	margin: 3px 5px 0px 2px;
+}
+
+.aloha .aloha-upnxt-highlight-field-img {
+	background: url(../img/highlight-icon.png) no-repeat 0px 0px !important;
+	margin: 3px 5px 0px 2px;
+}
+
+.aloha-upnxt-highlight {
+    background-color: #FFFF88;
 }
 
 .aloha .aloha-upnxt-field-label-item {
@@ -12,9 +22,9 @@
 }
 
 span.upnxt-field {
-	border-bottom: 1px dashed #000;
+	border-bottom: 1px dotted #000;
 }
 
 span.upnxt-field:hover {
-	color:#ff0000;
+	border-bottom: 2px solid #000;
 }

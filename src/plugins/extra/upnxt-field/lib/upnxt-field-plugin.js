@@ -9,6 +9,7 @@ define([
 	'jquery',
 	'PubSub',
 	'aloha/plugin',
+	'aloha/state-override',
 	'aloha/selection',
 	'util/dom',
 	'ui/ui',
@@ -23,6 +24,7 @@ define([
 	$,
 	PubSub,
 	Plugin,
+	StateOverride,
 	Selection,
 	Dom,
 	Ui,
@@ -35,7 +37,8 @@ define([
 	'use strict';
 
 	var UPNXT_FIELD_CLASS = 'upnxt-field';
-
+	var UPNXT_HIGHLIGHTS_CLASS = "aloha-upnxt-highlight";
+	
 	/**
 	 * Ui Attribute Field singleton.
 	 *
@@ -45,13 +48,7 @@ define([
 	 *
 	 * @type {AttributeField}
 	 */
-	var FIELD = null;
-
-	/**
-	 * UI Button to remove upnxt-field
-	 */
-	var removeButton = null;
-
+	
 	/**
 	 * Sets focus on the given field.
 	 *
@@ -62,9 +59,6 @@ define([
 			field.foreground();
 			field.focus();
 		}
-		// show the field and remove button
-		FIELD.show();
-		removeButton.show();
 	}
 
 	/**
@@ -90,7 +84,7 @@ define([
 	 * @this {HTMLElement}
 	 * @return {boolean} True if the given markup denotes upnxt-field wrapper.
 	 */
-	function filterForWaiLangMarkup() {
+	function filterForUpnxtFieldMarkup() {
 		var $elem = $(this);
 		return $elem.hasClass(UPNXT_FIELD_CLASS);
 	}
@@ -101,11 +95,10 @@ define([
 	 * @param {RangeObject} range
 	 * @return {HTMLElement|null} Wai-lang wrapper node; null otherwise.
 	 */
-	function findWaiLangMarkup(range) {
+	function findUpnxtFieldMarkup(range) {
 		return (
 			Aloha.activeEditable
-				? range.findMarkup(filterForWaiLangMarkup,
-				                   Aloha.activeEditable.obj)
+				? range.findMarkup(filterForUpnxtFieldMarkup, Aloha.activeEditable.obj)
 				: null
 		);
 	}
@@ -133,7 +126,7 @@ define([
 	 * @param {RangeObject} range
 	 */
 	function removeMarkup(range) {
-		var markup = findWaiLangMarkup(range);
+		var markup = findUpnxtFieldMarkup(range);
 		if (markup) {
 			Dom.removeFromDOM(markup, range, true);
 			range.select();
@@ -148,25 +141,51 @@ define([
 
 		// Because we don't want to add markup to an area that already contains
 		// upnxt-field markup.
-		if (!findWaiLangMarkup(range)) {
+		if (!findUpnxtFieldMarkup(range)) {
 			addMarkup(range);
 		}
-
-		focusOn(FIELD);
 	}
 
 	/**
 	 * Toggles language annotation on the markup at the current range.
 	 */
 	function toggleAnnotation() {
+		var upnxtFieldPlugin = this;
+
 		if (Aloha.activeEditable) {
 			var range = Selection.getRangeObject();
-			if (findWaiLangMarkup(range)) {
+			if (findUpnxtFieldMarkup(range)) {
 				removeMarkup(range);
 			} else {
+				if (range.isCollapsed()) {
+					GENTICS.Utils.Dom.extendToWord(range);
+					if (range.isCollapsed()) {
+						if (StateOverride.enabled()) {
+							StateOverride.setWithRangeObject(
+								null,
+								range,
+								function (command, range) {
+									addMarkup(range);
+								}
+							);
+							return;
+						}
+					}
+				}
 				addMarkup(range);
-				focusOn(FIELD);
 			}
+		}
+	}
+
+	function highlightFields(state) {
+		if(isTrue(state)) {
+			$("."+UPNXT_FIELD_CLASS).each(function() {
+				$(this).addClass(UPNXT_HIGHLIGHTS_CLASS);
+			});
+		} else {
+			$("."+UPNXT_FIELD_CLASS).each(function() {
+				$(this).removeClass(UPNXT_HIGHLIGHTS_CLASS);
+			});
 		}
 	}
 
@@ -190,39 +209,21 @@ define([
 	 * @param {Plugin} plugin Wai-lang plugin instance
 	 */
 	function prepareUi(plugin) {
-		FIELD = attributeField({
-			name: 'upnxtFieldField',
-			width: 320,
-			valueField: 'id',
-			minChars: 1,
-			scope: 'Aloha.continuoustext'
-		});
-
 		plugin._fieldButton = Ui.adopt('upnxtField', ToggleButton, {
 			tooltip: i18n.t('button.add-upnxt-field.tooltip'),
-			text: i18n.t('button.add-upnxt-field.text'),
+			icon: 'aloha-icon aloha-upnxt-field-img',
 			scope: 'Aloha.continuoustext',
 			click: toggleAnnotation
 		});
 
-		removeButton = Ui.adopt('removeUpnxtField', Button, {
-			tooltip: i18n.t('button.add-upnxt-field-remove.tooltip'),
-			text: i18n.t('button.remove-upnxt-field.text'),
+		plugin._highlightButton = Ui.adopt('upnxtHighlightFields', ToggleButton, {
+			tooltip: i18n.t('button.add-upnxt-field.tooltip'),
+			icon: 'aloha-icon aloha-upnxt-highlight-field-img',
 			scope: 'Aloha.continuoustext',
-			click: function onButtonClick() {
-				removeMarkup(Selection.getRangeObject());
+			click: function() {
+				highlightFields(plugin._highlightButton.getState());
 			}
 		});
-
-		FIELD.setTemplate(plugin.flags
-				? '<div class="aloha-upnxt-field-img-item">' +
-				  '<img class="aloha-upnxt-field-img" src="{url}" />' +
-				  '<div class="aloha-upnxt-field-label-item">{name} ({id})</div>' +
-				  '</div>'
-				: '<div class="aloha-upnxt-field-img-item">' +
-				  '<div class="aloha-upnxt-field-label-item">{name} ({id})</div>' +
-				  '</div>'
-			);
 	}
 
 	/**
@@ -279,70 +280,48 @@ define([
 	/**
 	 * Registers event handlers for the given plugin instance.
 	 *
-	 * Assumes `FIELD` is initialized.
-	 *
 	 * @param {Plugin} plugin Instance of upnxt-field plugin.
 	 */
 	function subscribeEvents(plugin) {
-		PubSub.sub('aloha.editable.activated',
-			function onEditableActivated(msg) {
-				var config = getConfig(msg.data.editable, plugin);
-				if ($.inArray('span', config) > -1) {
-					plugin._fieldButton.show();
-				} else {
-					plugin._fieldButton.hide();
-				}
-			});
-
-		Aloha.bind('aloha-selection-changed',
-			function onSelectionChanged($event, range) {
-				var markup = findWaiLangMarkup(range);
-				if (markup) {
-					plugin._fieldButton.setState(true);
-					FIELD.setTargetObject(markup, 'text');
-
-					// show the field and remove button
-					FIELD.show();
-					removeButton.show();
-
-					Scopes.enterScope(plugin.name, 'upnxt-field');
-				} else {
-					plugin._fieldButton.setState(false);
-					FIELD.setTargetObject(null);
-
-					// hide the field and remove button
-					FIELD.hide();
-					removeButton.hide();
-
-					Scopes.leaveScope(plugin.name, 'upnxt-field', true);
-				}
-			});
-
-		FIELD.addListener('blur', function onFieldBlur() {
-			// @TODO Validate value to not permit values outside the set of
-			//       configured language codes.
-			if (!this.getValue()) {
-				removeMarkup(Selection.getRangeObject());
+		PubSub.sub('aloha.editable.activated', function onEditableActivated(msg) {
+			var config = getConfig(msg.data.editable, plugin);
+			if ($.inArray('span', config) > -1) {
+				plugin._fieldButton.show();
+			} else {
+				plugin._fieldButton.hide();
 			}
 		});
 
-		Aloha.bind('aloha-editable-created',
-			function onEditableCreated($event, editable) {
-				editable.obj.bind('keydown', plugin.hotKey.insertAnnotation,
-					function () {
-						prepareAnnotation();
+		Aloha.bind('aloha-selection-changed', function onSelectionChanged($event, range) {
+			var markup = findUpnxtFieldMarkup(range);
+			
+			if (markup) {
+				plugin._fieldButton.setState(true);
+			} else {
+				plugin._fieldButton.setState(false);
+			}
 
-						// Because on a MAC Safari, cursor would otherwise
-						// automatically jump to location bar.  We therefore
-						// prevent bubbling, so that the editor must hit ESC and
-						// then META+I to manually do that.
-						return false;
-					});
+			highlightFields(plugin._highlightButton.getState());
 
-				editable.obj.find('span.'+UPNXT_FIELD_CLASS).each(function () {
-					annotate(this);
+			return false;
+		});
+
+		Aloha.bind('aloha-editable-created', function onEditableCreated($event, editable) {
+			editable.obj.bind('keydown', plugin.hotKey.insertAnnotation,
+				function () {
+					prepareAnnotation();
+
+					// Because on a MAC Safari, cursor would otherwise
+					// automatically jump to location bar.  We therefore
+					// prevent bubbling, so that the editor must hit ESC and
+					// then META+I to manually do that.
+					return false;
 				});
+
+			editable.obj.find('span.'+UPNXT_FIELD_CLASS).each(function () {
+				annotate(this);
 			});
+		});
 	}
 
 	return Plugin.create('upnxt-field', {
@@ -362,13 +341,7 @@ define([
 		 */
 		iso639: 'iso639-1',
 
-		/**
-		 * Whether or not to show flag icons.
-		 *
-		 * @type {boolean}
-		 */
-		flags: false,
-
+		
 		/**
 		 * HotKeys used for special actions.
 		 *
@@ -386,7 +359,6 @@ define([
 			if (this.settings.iso639) {
 				this.iso639 = this.settings.iso639;
 			}
-			this.flags = isTrue(this.settings.flags);
 			prepareUi(this);
 			subscribeEvents(this);
 		},
